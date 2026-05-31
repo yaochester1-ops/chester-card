@@ -1,0 +1,653 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Chester · 姚凯航</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      background-color: #FFF0F6;
+      background-image: radial-gradient(circle, #FFCCE0 1.5px, transparent 1.5px);
+      background-size: 30px 30px;
+      color: #1d1d1f;
+      font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Helvetica Neue', sans-serif;
+      min-height: 100vh;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    .page {
+      max-width: 680px;
+      margin: 0 auto;
+      padding: 80px 32px 120px;
+    }
+
+    /* ── Hero ── */
+    .hero {
+      position: relative;
+      margin-bottom: 48px;
+    }
+
+    .name {
+      font-size: clamp(3.6rem, 11vw, 5.5rem);
+      font-weight: 800;
+      letter-spacing: -0.04em;
+      color: #1d1d1f;
+      line-height: 1;
+      margin-bottom: 10px;
+      text-shadow:
+        2px 2px 0px #b0b0b8,
+        4px 4px 0px #c8c8d0,
+        6px 6px 12px rgba(0,0,0,0.12);
+    }
+
+    .name-cn {
+      font-size: 1.1rem;
+      font-weight: 500;
+      color: #757575;
+      letter-spacing: 0.3em;
+      margin-bottom: 14px;
+    }
+
+    .role {
+      font-size: 0.95rem;
+      color: #9E9E9E;
+      font-weight: 400;
+    }
+
+    /* 蜡笔小新贴纸 */
+    .shinchan {
+      position: absolute;
+      right: 0;
+      bottom: -10px;
+      width: 130px;
+      height: auto;
+      border-radius: 14px;
+      box-shadow: 4px 4px 0px #1d1d1f;
+      transform: rotate(3deg);
+    }
+
+    /* ── 分隔线 ── */
+    hr {
+      border: none;
+      border-top: 2px dashed #FFB3D1;
+      margin-bottom: 40px;
+    }
+
+    /* ── 自我介绍 ── */
+    .bio {
+      background: rgba(255, 255, 255, 0.85);
+      border-radius: 20px;
+      padding: 24px 28px;
+      font-size: 1rem;
+      line-height: 1.85;
+      color: #3a3a3c;
+      margin-bottom: 52px;
+      border: 2px solid #FFB3D1;
+    }
+
+    /* ── 卡片区 ── */
+    .section-label {
+      font-size: 0.72rem;
+      font-weight: 700;
+      letter-spacing: 0.15em;
+      text-transform: uppercase;
+      color: #BDBDBD;
+      margin-bottom: 14px;
+    }
+
+    .cards {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      margin-bottom: 52px;
+    }
+
+    .card {
+      background: #1d1d1f;
+      padding: 22px 28px;
+      border-radius: 18px;
+      display: flex;
+      align-items: center;
+      gap: 24px;
+      transition: background 0.2s ease, transform 0.2s ease;
+      cursor: default;
+      overflow: hidden;
+    }
+
+    .card:hover {
+      background: #2c2c2e;
+      transform: translateY(-2px);
+    }
+
+    .card-num {
+      font-size: 0.7rem;
+      font-weight: 700;
+      color: #636366;
+      letter-spacing: 0.1em;
+      min-width: 22px;
+    }
+
+    .card-body { flex: 1; }
+
+    .card-title {
+      font-size: 1rem;
+      font-weight: 700;
+      color: #ffffff;
+      margin-bottom: 4px;
+    }
+
+    .card-desc {
+      font-size: 0.82rem;
+      line-height: 1.6;
+      color: #8e8e93;
+    }
+
+    .card-detail {
+      font-size: 0.79rem;
+      line-height: 1.65;
+      color: #636366;
+      max-height: 0;
+      overflow: hidden;
+      opacity: 0;
+      transition: max-height 0.35s ease, opacity 0.3s ease, margin-top 0.3s ease;
+      margin-top: 0;
+    }
+
+    .card:hover .card-detail {
+      max-height: 120px;
+      opacity: 1;
+      margin-top: 10px;
+    }
+
+    .card.has-photo:hover .card-detail {
+      max-height: 420px;
+    }
+
+    .card-detail img {
+      width: 100%;
+      border-radius: 10px;
+      margin-top: 12px;
+      display: block;
+    }
+
+    .card-photos {
+      display: flex;
+      gap: 8px;
+      margin-top: 12px;
+      overflow-x: auto;
+      padding-bottom: 4px;
+      scrollbar-width: none;
+    }
+    .card-photos::-webkit-scrollbar { display: none; }
+
+    .card-photos img {
+      height: 180px;
+      width: auto;
+      border-radius: 10px;
+      flex-shrink: 0;
+      margin-top: 0;
+    }
+
+    .card-arrow {
+      font-size: 1rem;
+      color: #3a3a3c;
+      transition: transform 0.25s ease, color 0.25s ease;
+    }
+
+    .card:hover .card-arrow {
+      transform: translateX(4px);
+      color: #636366;
+    }
+
+    /* ── 照片 ── */
+    .photo-wrap {
+      margin-bottom: 48px;
+    }
+
+    .photo-wrap img {
+      width: 100%;
+      border-radius: 20px;
+      display: block;
+      object-fit: cover;
+      border: 3px solid #FFB3D1;
+      box-shadow: 4px 4px 0 #FFB3D1;
+    }
+
+    .photo-caption {
+      text-align: center;
+      font-size: 0.78rem;
+      color: #BDBDBD;
+      margin-top: 10px;
+    }
+
+    /* ── 联系方式 ── */
+    .contact-list {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      margin-bottom: 72px;
+    }
+
+    .contact-item {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      background: rgba(255, 255, 255, 0.9);
+      border: 2px solid #FFB3D1;
+      border-radius: 16px;
+      padding: 15px 22px;
+      font-size: 0.9rem;
+    }
+
+    .contact-label { color: #BDBDBD; font-size: 0.85rem; }
+    .contact-value { color: #1d1d1f; font-weight: 600; }
+
+    /* ── MCQ 闪卡 ── */
+    .mcq-section { margin-bottom: 56px; }
+
+    .mcq-wrap {
+      perspective: 1200px;
+      margin-bottom: 16px;
+    }
+
+    .mcq-card {
+      width: 100%;
+      position: relative;
+      transform-style: preserve-3d;
+      transition: transform 0.55s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    .mcq-card.flipped { transform: rotateY(180deg); }
+
+    .mcq-face {
+      border-radius: 20px;
+      padding: 26px 24px;
+      backface-visibility: hidden;
+      -webkit-backface-visibility: hidden;
+    }
+
+    .mcq-front {
+      background: rgba(255,255,255,0.92);
+      border: 2px solid #FFB3D1;
+    }
+
+    .mcq-back {
+      position: absolute;
+      inset: 0;
+      transform: rotateY(180deg);
+      background: #1d1d1f;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      padding: 32px 24px;
+    }
+
+    .mcq-tag {
+      font-size: 0.65rem;
+      font-weight: 700;
+      letter-spacing: 0.15em;
+      text-transform: uppercase;
+      color: #FFB3D1;
+      margin-bottom: 12px;
+    }
+
+    .mcq-question {
+      font-size: 1rem;
+      font-weight: 700;
+      color: #1d1d1f;
+      margin-bottom: 18px;
+      line-height: 1.5;
+    }
+
+    .mcq-options {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .mcq-opt {
+      background: #f5f5f7;
+      border: 1.5px solid #e0e0e0;
+      border-radius: 12px;
+      padding: 11px 16px;
+      text-align: left;
+      cursor: pointer;
+      font-size: 0.88rem;
+      font-family: inherit;
+      color: #1d1d1f;
+      transition: border-color 0.2s, background 0.2s;
+      display: flex;
+      gap: 10px;
+      align-items: center;
+    }
+
+    .mcq-opt:hover:not(:disabled) { border-color: #FFB3D1; background: #FFF0F6; }
+    .mcq-opt:disabled { cursor: default; }
+    .mcq-opt.correct  { border-color: #4CAF50; background: #E8F5E9; }
+    .mcq-opt.wrong    { border-color: #EF5350; background: #FFEBEE; }
+
+    .mcq-opt-label {
+      font-weight: 700;
+      color: #BDBDBD;
+      min-width: 18px;
+    }
+
+    .mcq-result-icon { font-size: 2.8rem; margin-bottom: 10px; }
+    .mcq-result-text { font-size: 1.1rem; font-weight: 700; color: #fff; margin-bottom: 6px; }
+    .mcq-result-ans  { font-size: 0.85rem; color: #8e8e93; margin-bottom: 22px; line-height: 1.5; }
+
+    .mcq-next {
+      background: #FFB3D1;
+      border: none;
+      border-radius: 50px;
+      padding: 10px 28px;
+      font-size: 0.88rem;
+      font-weight: 700;
+      color: #1d1d1f;
+      cursor: pointer;
+      font-family: inherit;
+      transition: opacity 0.2s, transform 0.15s;
+    }
+    .mcq-next:hover { opacity: 0.85; transform: translateY(-1px); }
+
+    .mcq-nav {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+    }
+
+    .mcq-counter {
+      font-size: 0.8rem;
+      color: #BDBDBD;
+    }
+
+    .mcq-dot {
+      width: 7px; height: 7px;
+      border-radius: 50%;
+      background: #e0e0e0;
+      display: inline-block;
+      transition: background 0.2s;
+    }
+    .mcq-dot.active { background: #FFB3D1; }
+
+    /* ── 页脚 ── */
+    .footer {
+      text-align: center;
+      font-size: 0.75rem;
+      color: #BDBDBD;
+    }
+  </style>
+</head>
+<body>
+  <div class="page">
+
+    <!-- Hero：名字 + 蜡笔小新 -->
+    <div class="hero">
+      <div class="name">Chester</div>
+      <div class="name-cn">姚凯航</div>
+      <div class="role">漂移车手 · 模拟器赛车 · 摄影</div>
+      <img src="shinchan.png" class="shinchan" alt="蜡笔小新" />
+    </div>
+
+    <hr />
+
+    <div class="bio">
+      2009 年生，今年 17 岁。现在在新加坡留学，读 IBDP，Year 12。
+      课内是学生，课外是车手——赛道上追漂移极限，模拟器里磨每一个弯道，
+      今年带着车队征战 CSDC 2026，认真备战中。
+      喜欢拍照，对什么都好奇，懂得有点杂。
+      一个在新加坡读书、在赛道上漂移、用镜头记录世界的 17 岁。
+    </div>
+
+    <div class="section-label">关于我</div>
+    <div class="cards">
+      <div class="card has-photo">
+        <span class="card-num">01</span>
+        <div class="card-body">
+          <div class="card-title">漂移 · 真实赛道</div>
+          <div class="card-desc">方向盘打出去，后轮滑动，那一刻只有赛道。</div>
+          <div class="card-detail">座驾是宝马 1M，全凯芙拉车身，参加过 Royal Drift Series。漂移对我来说不只是技术，是一种状态——车尾出去的那一刻，什么都消失了，只剩赛道和油门。
+            <img src="drift-car.png" alt="宝马 1M 漂移" />
+          </div>
+        </div>
+        <span class="card-arrow">›</span>
+      </div>
+      <div class="card has-photo">
+        <span class="card-num">02</span>
+        <div class="card-body">
+          <div class="card-title">模拟器赛车 · CSDC 2026</div>
+          <div class="card-desc">今年带队征战 CSDC 2026，虚拟赛道同样全力以赴。</div>
+          <div class="card-detail">模拟器不是游戏，是训练。每个弯道的入弯点、刹车距离、油门时机，全靠圈数堆出来。今年目标是带队拿到 CSDC 2026 好成绩。
+            <img src="csdc2026.jpg" alt="CSDC 2026 车队" />
+          </div>
+        </div>
+        <span class="card-arrow">›</span>
+      </div>
+      <div class="card has-photo">
+        <span class="card-num">03</span>
+        <div class="card-body">
+          <div class="card-title">摄影</div>
+          <div class="card-desc">好的照片里总有一个刚刚好的瞬间。</div>
+          <div class="card-detail">喜欢拍赛道、拍光线、拍那些别人没注意到的细节。摄影和开车有点像——都是在等那个刚刚好的时机，然后一下抓住它。
+            <div class="card-photos">
+              <img src="photo_1.jpg" alt="摄影作品" />
+            </div>
+          </div>
+        </div>
+        <span class="card-arrow">›</span>
+      </div>
+      <div class="card has-photo">
+        <span class="card-num">04</span>
+        <div class="card-body">
+          <div class="card-title">射击</div>
+          <div class="card-desc">喜欢玩枪，讲究的是稳、准、控制感。</div>
+          <div class="card-detail">射击和漂移有相似的地方——都需要极度专注，屏住呼吸，在那一刻做到最精准的控制。
+            <img src="gun.jpg" alt="枪械收藏" />
+          </div>
+        </div>
+        <span class="card-arrow">›</span>
+      </div>
+      <div class="card has-photo">
+        <span class="card-num">05</span>
+        <div class="card-body">
+          <div class="card-title">骑行 · 公路车 &amp; 速降</div>
+          <div class="card-desc">公路车追速度，速降追肾上腺素，都爱。</div>
+          <div class="card-detail">平路上踩公路车感受风阻，山道上骑速降感受失控边缘——两种完全不同的体验，但都让我觉得活着。
+            <img src="bike.jpg" alt="公路车" />
+          </div>
+        </div>
+        <span class="card-arrow">›</span>
+      </div>
+      <div class="card has-photo">
+        <span class="card-num">06</span>
+        <div class="card-body">
+          <div class="card-title">做饭</div>
+          <div class="card-desc">下了赛道，进厨房，认真对待每一顿饭。</div>
+          <div class="card-detail">做饭和开车一样，需要节奏感和对细节的把控。火候、调味、摆盘——认真做出来的东西，自己吃着才踏实。
+            <div class="card-photos">
+              <img src="food_1.jpg" alt="做饭" />
+              <img src="food_2.jpg" alt="做饭" />
+              <img src="food_3.jpg" alt="做饭" />
+            </div>
+          </div>
+        </div>
+        <span class="card-arrow">›</span>
+      </div>
+    </div>
+
+    <div class="photo-wrap">
+      <img src="drift-car.png" alt="宝马 1M 漂移" />
+      <div class="photo-caption">宝马 1M · 全凯芙拉</div>
+    </div>
+
+    <div class="photo-wrap">
+      <img src="csdc2026.jpg" alt="CSDC 2026 车队" />
+      <div class="photo-caption">CSDC 2026 · 模拟器车队阵容</div>
+    </div>
+
+    <div class="section-label">联系我</div>
+    <div class="contact-list">
+      <div class="contact-item">
+        <span class="contact-label">年龄</span>
+        <span class="contact-value">17 岁 · 2009</span>
+      </div>
+      <div class="contact-item">
+        <span class="contact-label">在读</span>
+        <span class="contact-value">新加坡 · IBDP Year 12</span>
+      </div>
+      <div class="contact-item">
+        <span class="contact-label">Instagram</span>
+        <span class="contact-value">@cc22509</span>
+      </div>
+      <div class="contact-item">
+        <span class="contact-label">微信</span>
+        <span class="contact-value">bs225225</span>
+      </div>
+    </div>
+
+    <!-- MCQ 测验 -->
+    <div class="mcq-section">
+      <div class="section-label">你真的了解我吗？</div>
+
+      <div class="mcq-wrap">
+        <div class="mcq-card" id="mcq-card">
+
+          <!-- 正面：题目 + 选项 -->
+          <div class="mcq-face mcq-front">
+            <div class="mcq-tag">Quiz</div>
+            <div class="mcq-question" id="mcq-q"></div>
+            <div class="mcq-options" id="mcq-opts"></div>
+          </div>
+
+          <!-- 背面：结果 -->
+          <div class="mcq-face mcq-back">
+            <div class="mcq-result-icon" id="mcq-icon"></div>
+            <div class="mcq-result-text" id="mcq-result"></div>
+            <div class="mcq-result-ans" id="mcq-ans"></div>
+            <button class="mcq-next" id="mcq-next-btn" onclick="nextQ()">下一题 →</button>
+          </div>
+
+        </div>
+      </div>
+
+      <div class="mcq-nav" id="mcq-dots"></div>
+    </div>
+
+    <div class="footer">Chester Bruce Cai Yao &nbsp;·&nbsp; 2026</div>
+
+  </div>
+
+  <script>
+    const qs = [
+      {
+        q: "Chester 的中文名叫什么？",
+        opts: ["姚航凯", "姚凯航", "凯航姚", "Chester Yao"],
+        ans: 1
+      },
+      {
+        q: "他在哪个国家读书？",
+        opts: ["中国", "澳大利亚", "新加坡", "英国"],
+        ans: 2
+      },
+      {
+        q: "他读的是什么课程？",
+        opts: ["A-Level", "SAT", "IBDP", "高考"],
+        ans: 2
+      },
+      {
+        q: "他的漂移座驾是？",
+        opts: ["奔驰 C63", "宝马 1M", "丰田 86", "日产 GT-R"],
+        ans: 1
+      },
+      {
+        q: "他今年参加哪个模拟器赛事？",
+        opts: ["iRacing World Final", "CSDC 2026", "GT World Series", "Forza League"],
+        ans: 1
+      },
+      {
+        q: "他最喜欢的动漫角色是？",
+        opts: ["海贼王路飞", "蜡笔小新", "火影鸣人", "龙珠悟空"],
+        ans: 1
+      },
+      {
+        q: "他的 Instagram 账号是？",
+        opts: ["@chester_yao", "@cc22509", "@drift_chester", "@yaokaihang"],
+        ans: 1
+      },
+      {
+        q: "以下哪项不是他的爱好？",
+        opts: ["骑行", "射击", "做饭", "打篮球"],
+        ans: 3
+      },
+    ];
+
+    const labels = ['A', 'B', 'C', 'D'];
+    let cur = 0;
+    let answered = false;
+
+    function renderQ() {
+      answered = false;
+      const q = qs[cur];
+      document.getElementById('mcq-card').classList.remove('flipped');
+      document.getElementById('mcq-q').textContent = q.q;
+
+      const optsEl = document.getElementById('mcq-opts');
+      optsEl.innerHTML = '';
+      q.opts.forEach((opt, i) => {
+        const btn = document.createElement('button');
+        btn.className = 'mcq-opt';
+        btn.innerHTML = `<span class="mcq-opt-label">${labels[i]}</span>${opt}`;
+        btn.onclick = () => choose(i);
+        optsEl.appendChild(btn);
+      });
+
+      renderDots();
+
+      const nextBtn = document.getElementById('mcq-next-btn');
+      nextBtn.textContent = cur === qs.length - 1 ? '重新开始 ↺' : '下一题 →';
+    }
+
+    function choose(i) {
+      if (answered) return;
+      answered = true;
+
+      const q = qs[cur];
+      const btns = document.querySelectorAll('.mcq-opt');
+      btns.forEach(b => b.disabled = true);
+      btns[i].classList.add(i === q.ans ? 'correct' : 'wrong');
+      btns[q.ans].classList.add('correct');
+
+      const correct = i === q.ans;
+      document.getElementById('mcq-icon').textContent   = correct ? '🎉' : '😅';
+      document.getElementById('mcq-result').textContent = correct ? '答对了！' : '答错了';
+      document.getElementById('mcq-ans').textContent    = `正确答案：${labels[q.ans]}  ${q.opts[q.ans]}`;
+
+      setTimeout(() => {
+        document.getElementById('mcq-card').classList.add('flipped');
+      }, 400);
+    }
+
+    function nextQ() {
+      cur = (cur + 1) % qs.length;
+      renderQ();
+    }
+
+    function renderDots() {
+      const el = document.getElementById('mcq-dots');
+      el.innerHTML = '';
+      qs.forEach((_, i) => {
+        const d = document.createElement('span');
+        d.className = 'mcq-dot' + (i === cur ? ' active' : '');
+        el.appendChild(d);
+      });
+    }
+
+    renderQ();
+  </script>
+</body>
+</html>
