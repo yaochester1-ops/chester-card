@@ -257,6 +257,7 @@
       border: 2px solid #FFB3D1;
       box-shadow: 3px 3px 0 #FFB3D1;
       background: #f5f5f7;
+      cursor: pointer;
     }
 
     .gallery-item img {
@@ -287,6 +288,88 @@
 
     @media (max-width: 480px) {
       .gallery-item img { height: 115px; }
+    }
+
+    /* ── Lightbox ── */
+    .lightbox {
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.93);
+      z-index: 1000;
+      display: none;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+    }
+    .lightbox.open { display: flex; }
+
+    .lb-img-wrap {
+      max-width: min(90vw, 720px);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+
+    .lb-img-wrap img {
+      max-width: min(90vw, 720px);
+      max-height: 78vh;
+      width: auto;
+      height: auto;
+      object-fit: contain;
+      border-radius: 12px;
+      display: block;
+    }
+
+    .lb-cap {
+      color: rgba(255,255,255,0.6);
+      font-size: 0.82rem;
+      margin-top: 14px;
+      letter-spacing: 0.06em;
+    }
+
+    .lb-counter {
+      color: rgba(255,255,255,0.3);
+      font-size: 0.72rem;
+      margin-top: 6px;
+    }
+
+    .lb-close {
+      position: fixed;
+      top: 18px; right: 20px;
+      background: rgba(255,255,255,0.12);
+      border: none;
+      color: #fff;
+      font-size: 1.1rem;
+      width: 38px; height: 38px;
+      border-radius: 50%;
+      cursor: pointer;
+      display: flex; align-items: center; justify-content: center;
+      transition: background 0.2s;
+    }
+    .lb-close:hover { background: rgba(255,255,255,0.25); }
+
+    .lb-prev, .lb-next {
+      position: fixed;
+      top: 50%; transform: translateY(-50%);
+      background: rgba(255,255,255,0.1);
+      border: none;
+      color: #fff;
+      font-size: 2rem;
+      width: 48px; height: 64px;
+      border-radius: 10px;
+      cursor: pointer;
+      display: flex; align-items: center; justify-content: center;
+      transition: background 0.2s;
+      line-height: 1;
+    }
+    .lb-prev { left: 14px; }
+    .lb-next { right: 14px; }
+    .lb-prev:hover, .lb-next:hover { background: rgba(255,255,255,0.25); }
+
+    @media (max-width: 480px) {
+      .lb-prev { left: 6px; }
+      .lb-next { right: 6px; }
+      .lb-prev, .lb-next { width: 36px; font-size: 1.5rem; }
     }
 
     /* ── 联系方式 ── */
@@ -735,6 +818,18 @@
 
   </div>
 
+  <!-- Lightbox -->
+  <div id="lightbox" class="lightbox">
+    <button class="lb-close" id="lb-close">✕</button>
+    <button class="lb-prev"  id="lb-prev">‹</button>
+    <button class="lb-next"  id="lb-next">›</button>
+    <div class="lb-img-wrap">
+      <img id="lb-img" src="" alt="" />
+      <div id="lb-cap" class="lb-cap"></div>
+    </div>
+    <div id="lb-counter" class="lb-counter"></div>
+  </div>
+
   <script>
     // 手机点击展开卡片
     document.querySelectorAll('.card').forEach(card => {
@@ -965,6 +1060,63 @@
     }
 
     renderQ();
+
+    // ── 照片灯箱 ──
+    const lbEl    = document.getElementById('lightbox');
+    const lbImgEl = document.getElementById('lb-img');
+    const lbCapEl = document.getElementById('lb-cap');
+    const lbCtrEl = document.getElementById('lb-counter');
+    const lbItems = Array.from(document.querySelectorAll('.gallery-item'));
+    const lbData  = lbItems.map(el => ({
+      src: el.querySelector('img').src,
+      cap: el.querySelector('.gallery-cap').textContent.trim()
+    }));
+    let lbIdx = 0;
+
+    lbItems.forEach((el, i) => el.addEventListener('click', () => openLb(i)));
+
+    function openLb(i) {
+      lbIdx = i;
+      setLb();
+      lbEl.classList.add('open');
+      document.body.style.overflow = 'hidden';
+    }
+
+    function closeLb() {
+      lbEl.classList.remove('open');
+      document.body.style.overflow = '';
+    }
+
+    function lbNav(d) {
+      lbIdx = (lbIdx + d + lbData.length) % lbData.length;
+      setLb();
+    }
+
+    function setLb() {
+      lbImgEl.src = lbData[lbIdx].src;
+      lbCapEl.textContent = lbData[lbIdx].cap;
+      lbCtrEl.textContent = `${lbIdx + 1} / ${lbData.length}`;
+    }
+
+    document.getElementById('lb-close').onclick = closeLb;
+    document.getElementById('lb-prev').onclick  = () => lbNav(-1);
+    document.getElementById('lb-next').onclick  = () => lbNav(1);
+
+    lbEl.addEventListener('click', e => { if (e.target === lbEl) closeLb(); });
+
+    document.addEventListener('keydown', e => {
+      if (!lbEl.classList.contains('open')) return;
+      if (e.key === 'Escape')     closeLb();
+      if (e.key === 'ArrowLeft')  lbNav(-1);
+      if (e.key === 'ArrowRight') lbNav(1);
+    });
+
+    let lbTouchX = 0;
+    lbEl.addEventListener('touchstart', e => { lbTouchX = e.touches[0].clientX; }, { passive: true });
+    lbEl.addEventListener('touchend',   e => {
+      const dx = e.changedTouches[0].clientX - lbTouchX;
+      if (Math.abs(dx) > 50) lbNav(dx < 0 ? 1 : -1);
+    });
   </script>
 </body>
 </html>
