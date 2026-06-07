@@ -20,7 +20,38 @@
     .page {
       max-width: 680px;
       margin: 0 auto;
-      padding: 80px 32px 120px;
+      padding: 80px 24px 120px;
+    }
+
+    @media (max-width: 480px) {
+      .page { padding: 48px 16px 80px; }
+
+      .name { font-size: clamp(2.8rem, 15vw, 4rem); }
+
+      .shinchan { width: 90px; bottom: 0; }
+
+      .hero { margin-bottom: 32px; }
+
+      .bio { padding: 18px 18px; font-size: 0.92rem; }
+
+      .card { padding: 16px 18px; gap: 14px; }
+      .card-title { font-size: 0.92rem; }
+
+      .card.has-photo:hover .card-detail { max-height: 380px; }
+
+      .card-photos img { height: 130px; }
+
+      .mcq-face { padding: 20px 16px; }
+      .mcq-question { font-size: 0.92rem; }
+      .mcq-opt { font-size: 0.82rem; padding: 9px 12px; }
+
+      #snake-canvas { width: 280px; height: 280px; }
+
+      .snake-wrap { padding: 16px; }
+
+      .photo-wrap img { border-radius: 14px; }
+
+      .contact-item { padding: 13px 16px; }
     }
 
     /* ── Hero ── */
@@ -116,7 +147,7 @@
       overflow: hidden;
     }
 
-    .card:hover {
+    .card:hover, .card.open {
       background: #2c2c2e;
       transform: translateY(-2px);
     }
@@ -155,13 +186,15 @@
       margin-top: 0;
     }
 
-    .card:hover .card-detail {
+    .card:hover .card-detail,
+    .card.open .card-detail {
       max-height: 120px;
       opacity: 1;
       margin-top: 10px;
     }
 
-    .card.has-photo:hover .card-detail {
+    .card.has-photo:hover .card-detail,
+    .card.has-photo.open .card-detail {
       max-height: 420px;
     }
 
@@ -196,7 +229,8 @@
       transition: transform 0.25s ease, color 0.25s ease;
     }
 
-    .card:hover .card-arrow {
+    .card:hover .card-arrow,
+    .card.open .card-arrow {
       transform: translateX(4px);
       color: #636366;
     }
@@ -640,6 +674,15 @@
   </div>
 
   <script>
+    // 手机点击展开卡片
+    document.querySelectorAll('.card').forEach(card => {
+      card.addEventListener('click', () => {
+        if (window.matchMedia('(hover: none)').matches) {
+          card.classList.toggle('open');
+        }
+      });
+    });
+
     // ── 贪吃蛇 ──
     const canvas = document.getElementById('snake-canvas');
     const ctx    = canvas.getContext('2d');
