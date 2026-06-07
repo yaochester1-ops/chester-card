@@ -1,0 +1,547 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>小新 · 专属助手</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+:root{
+  --p:#7c6fff;--pl:#b0a8ff;--bg:#07071a;
+  --g1:rgba(255,255,255,0.04);--g2:rgba(255,255,255,0.08);
+  --bd:rgba(255,255,255,0.08);--tx:#e2e2f0;--mt:#7777aa;
+  --ok:#00d4a0;--warn:#ff7675;--gold:#ffd080;
+}
+body{font-family:-apple-system,BlinkMacSystemFont,'PingFang SC','Microsoft YaHei',sans-serif;
+  background:var(--bg);color:var(--tx);height:100vh;overflow:hidden}
+
+/* ── Background ── */
+#cvs{position:fixed;inset:0;z-index:0;pointer-events:none}
+.aurora{position:fixed;inset:0;z-index:1;pointer-events:none;overflow:hidden}
+.orb{position:absolute;border-radius:50%;filter:blur(90px)}
+.o1{width:700px;height:700px;background:radial-gradient(circle,#6c63ff,transparent);
+  top:-220px;left:-120px;opacity:.28;animation:f1 20s ease-in-out infinite}
+.o2{width:550px;height:550px;background:radial-gradient(circle,#00d4ff,transparent);
+  bottom:-160px;right:-120px;opacity:.18;animation:f2 25s ease-in-out infinite}
+.o3{width:450px;height:450px;background:radial-gradient(circle,#ff63a8,transparent);
+  top:45%;left:38%;opacity:.16;animation:f3 17s ease-in-out infinite}
+.o4{width:380px;height:380px;background:radial-gradient(circle,#63ffd4,transparent);
+  top:55%;left:5%;opacity:.13;animation:f4 28s ease-in-out infinite}
+@keyframes f1{0%,100%{transform:translate(0,0) scale(1)}40%{transform:translate(90px,70px) scale(1.12)}70%{transform:translate(-50px,120px) scale(.93)}}
+@keyframes f2{0%,100%{transform:translate(0,0) scale(1)}35%{transform:translate(-110px,-70px) scale(1.18)}70%{transform:translate(60px,-110px) scale(.88)}}
+@keyframes f3{0%,100%{transform:translate(0,0) scale(1)}50%{transform:translate(-90px,70px) scale(1.25)}}
+@keyframes f4{0%,100%{transform:translate(0,0)}30%{transform:translate(130px,-90px)}70%{transform:translate(-70px,60px)}}
+
+/* ── Layout ── */
+.app{display:flex;height:100vh;position:relative;z-index:2}
+
+/* ── Sidebar ── */
+.sb{width:295px;min-width:255px;border-right:1px solid var(--bd);
+  display:flex;flex-direction:column;background:rgba(7,7,26,.82);backdrop-filter:blur(26px)}
+.sb-head{padding:18px 16px 12px;border-bottom:1px solid var(--bd)}
+.date-lbl{font-size:11px;color:var(--pl);font-weight:600;letter-spacing:.5px;margin-bottom:3px}
+.sb-title{font-size:18px;font-weight:700}
+
+/* Week tabs */
+.wtabs{display:flex;overflow-x:auto;padding:9px 12px;gap:5px;
+  border-bottom:1px solid var(--bd);scrollbar-width:none}
+.wtabs::-webkit-scrollbar{display:none}
+.dtab{display:flex;flex-direction:column;align-items:center;padding:7px 9px;
+  border-radius:10px;cursor:pointer;min-width:46px;flex-shrink:0;
+  border:1px solid transparent;transition:all .2s;background:var(--g1);position:relative}
+.dtab:hover{background:var(--g2)}
+.dtab.active{background:rgba(108,99,255,.2);border-color:rgba(108,99,255,.5)}
+.dtab .dn{font-size:10px;color:var(--mt);margin-bottom:2px}
+.dtab.active .dn{color:var(--pl)}
+.dtab .dd{font-size:14px;font-weight:600}
+.dtab .dot{position:absolute;top:5px;right:5px;width:5px;height:5px;
+  background:var(--p);border-radius:50%}
+
+/* Todo input */
+.tinp-row{display:flex;gap:7px;padding:11px 14px;border-bottom:1px solid var(--bd)}
+.tinp{flex:1;background:var(--g2);border:1px solid var(--bd);border-radius:9px;
+  padding:8px 11px;color:var(--tx);font-size:13px;outline:none;font-family:inherit;
+  transition:border-color .2s}
+.tinp:focus{border-color:var(--p)}
+.tinp::placeholder{color:var(--mt)}
+.tadd{width:34px;height:34px;background:var(--p);border:none;border-radius:8px;
+  color:#fff;font-size:21px;cursor:pointer;display:flex;align-items:center;
+  justify-content:center;transition:transform .15s;flex-shrink:0}
+.tadd:hover{transform:scale(1.08)}
+.tstats{display:flex;gap:8px;padding:7px 14px}
+.tstat{font-size:11px;color:var(--mt)}
+.tstat.ok{color:var(--ok)}
+
+/* Todo list */
+.tlist{flex:1;overflow-y:auto;padding:3px 12px 6px}
+.tlist::-webkit-scrollbar{width:3px}
+.tlist::-webkit-scrollbar-thumb{background:var(--bd);border-radius:2px}
+.tempty{text-align:center;color:var(--mt);font-size:12px;padding:24px 12px}
+.titem{display:flex;align-items:flex-start;gap:9px;padding:9px 11px;border-radius:10px;
+  margin-bottom:6px;background:var(--g1);border:1px solid var(--bd);
+  transition:all .2s;animation:itin .25s ease}
+@keyframes itin{from{opacity:0;transform:translateX(-8px)}to{opacity:1;transform:translateX(0)}}
+.titem:hover{background:var(--g2);border-color:rgba(108,99,255,.25)}
+.titem.done{opacity:.42}
+.chk{width:18px;height:18px;border-radius:50%;border:2px solid var(--p);cursor:pointer;
+  display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:1px;
+  transition:all .2s;background:transparent}
+.titem.done .chk{background:var(--ok);border-color:var(--ok)}
+.chkico{display:none}
+.titem.done .chkico{display:block}
+.tlbl{flex:1;font-size:13px;line-height:1.45;word-break:break-all}
+.titem.done .tlbl{text-decoration:line-through;color:var(--mt)}
+.tdel{background:none;border:none;color:var(--mt);cursor:pointer;padding:2px;
+  border-radius:5px;opacity:0;transition:all .2s;display:flex;align-items:center}
+.titem:hover .tdel{opacity:1}
+.tdel:hover{color:var(--warn);background:rgba(255,118,117,.1)}
+
+/* Reminders section */
+.rsec{border-top:1px solid var(--bd);padding:9px 14px;max-height:185px;overflow-y:auto}
+.rsec::-webkit-scrollbar{width:3px}
+.rsec::-webkit-scrollbar-thumb{background:var(--bd);border-radius:2px}
+.slbl{font-size:10px;font-weight:700;color:var(--mt);letter-spacing:.5px;margin-bottom:7px;text-transform:uppercase}
+.ritem{display:flex;align-items:center;gap:7px;padding:7px 9px;border-radius:9px;
+  margin-bottom:4px;background:rgba(255,208,128,.06);border:1px solid rgba(255,208,128,.13);
+  font-size:12px;animation:itin .25s ease}
+.rtime{color:var(--gold);font-weight:700;flex-shrink:0;min-width:38px}
+.rtxt{flex:1;color:var(--tx)}
+.rdaily{font-size:10px;color:var(--gold);background:rgba(255,208,128,.15);
+  padding:1px 5px;border-radius:4px;flex-shrink:0}
+.rdel{background:none;border:none;color:var(--mt);cursor:pointer;
+  opacity:0;transition:opacity .2s;font-size:13px;line-height:1}
+.ritem:hover .rdel{opacity:1}
+.rnone{font-size:12px;color:var(--mt);text-align:center;padding:6px 0}
+
+.bbtns{display:flex;gap:6px;padding:7px 14px 13px}
+.bbtn{flex:1;background:none;border:1px solid var(--bd);color:var(--mt);
+  border-radius:7px;padding:6px;font-size:11px;cursor:pointer;font-family:inherit;transition:all .2s}
+.bbtn:hover{border-color:var(--warn);color:var(--warn);background:rgba(255,118,117,.05)}
+
+/* ── Chat ── */
+.chat{flex:1;display:flex;flex-direction:column;min-width:0}
+.chat-hd{padding:15px 20px;border-bottom:1px solid var(--bd);display:flex;align-items:center;
+  gap:12px;background:rgba(7,7,26,.75);backdrop-filter:blur(26px)}
+.bava{width:44px;height:44px;border-radius:50%;
+  background:linear-gradient(135deg,#6c63ff,#a29bfe);display:flex;align-items:center;
+  justify-content:center;font-size:22px;flex-shrink:0;box-shadow:0 0 22px rgba(108,99,255,.45)}
+.bname{font-size:16px;font-weight:700}
+.bstat{font-size:11px;color:var(--ok);display:flex;align-items:center;gap:5px}
+.sdot{width:6px;height:6px;background:var(--ok);border-radius:50%;animation:pulse 2s infinite}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.3}}
+
+.msgs{flex:1;overflow-y:auto;padding:16px 20px;display:flex;flex-direction:column;gap:12px}
+.msgs::-webkit-scrollbar{width:4px}
+.msgs::-webkit-scrollbar-thumb{background:var(--bd);border-radius:2px}
+.msg{display:flex;align-items:flex-end;gap:9px;animation:min .3s ease}
+.msg.u{flex-direction:row-reverse}
+@keyframes min{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
+.mava{width:32px;height:32px;border-radius:50%;background:var(--g2);
+  border:1px solid var(--bd);display:flex;align-items:center;justify-content:center;
+  font-size:15px;flex-shrink:0}
+.msg.u .mava{background:linear-gradient(135deg,#6c63ff,#a29bfe);border:none}
+.mbody{display:flex;flex-direction:column;max-width:70%}
+.msg.u .mbody{align-items:flex-end}
+.bbl{padding:10px 14px;border-radius:17px;font-size:14px;line-height:1.65;word-break:break-word}
+.msg.bot .bbl{background:rgba(255,255,255,.07);border:1px solid var(--bd);border-bottom-left-radius:4px}
+.msg.u .bbl{background:linear-gradient(135deg,#6c63ff,#a29bfe);color:#fff;border-bottom-right-radius:4px}
+.mtime{font-size:11px;color:var(--mt);margin-top:3px;padding:0 3px}
+.msg.u .mtime{text-align:right}
+.typing{display:flex;gap:5px;padding:13px 17px;background:rgba(255,255,255,.07);
+  border:1px solid var(--bd);border-radius:17px;border-bottom-left-radius:4px;width:fit-content}
+.td{width:7px;height:7px;background:var(--mt);border-radius:50%;animation:td 1.2s infinite}
+.td:nth-child(2){animation-delay:.2s}.td:nth-child(3){animation-delay:.4s}
+@keyframes td{0%,100%{transform:translateY(0)}50%{transform:translateY(-6px)}}
+
+/* Input */
+.inp-area{padding:11px 20px 17px;border-top:1px solid var(--bd);
+  background:rgba(7,7,26,.75);backdrop-filter:blur(26px)}
+.qcmds{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:9px}
+.qb{background:var(--g1);border:1px solid var(--bd);border-radius:20px;
+  padding:5px 11px;font-size:12px;color:var(--mt);cursor:pointer;
+  font-family:inherit;transition:all .2s}
+.qb:hover{border-color:var(--pl);color:var(--pl);background:rgba(108,99,255,.1)}
+.iwrap{display:flex;gap:9px;align-items:flex-end}
+.cinp{flex:1;background:var(--g2);border:1px solid var(--bd);border-radius:15px;
+  padding:10px 14px;color:var(--tx);font-size:14px;resize:none;outline:none;
+  max-height:120px;min-height:42px;font-family:inherit;line-height:1.5;transition:border-color .2s}
+.cinp:focus{border-color:var(--p)}
+.cinp::placeholder{color:var(--mt)}
+.sbtn{width:42px;height:42px;background:linear-gradient(135deg,#6c63ff,#a29bfe);
+  border:none;border-radius:12px;cursor:pointer;display:flex;align-items:center;
+  justify-content:center;transition:transform .15s;flex-shrink:0;
+  box-shadow:0 4px 16px rgba(108,99,255,.38)}
+.sbtn:hover{transform:scale(1.07)}.sbtn:active{transform:scale(.93)}
+.hint{font-size:11px;color:var(--mt);margin-top:6px;text-align:center}
+
+/* Alert overlay */
+.aovl{position:fixed;top:18px;right:18px;z-index:100;display:flex;flex-direction:column;gap:8px}
+.acard{background:rgba(14,10,40,.96);backdrop-filter:blur(20px);
+  border:1px solid rgba(255,210,80,.35);border-radius:13px;padding:13px 16px;
+  min-width:250px;max-width:310px;box-shadow:0 8px 32px rgba(0,0,0,.45),0 0 20px rgba(255,210,80,.08);
+  animation:ain .4s cubic-bezier(.175,.885,.32,1.275)}
+@keyframes ain{from{opacity:0;transform:translateX(50px) scale(.9)}to{opacity:1;transform:translateX(0) scale(1)}}
+.atitle{font-size:11px;color:var(--gold);font-weight:700;margin-bottom:5px}
+.atxt{font-size:14px;color:var(--tx);margin-bottom:9px}
+.adis{background:rgba(255,210,80,.15);border:1px solid rgba(255,210,80,.3);
+  border-radius:7px;color:var(--gold);padding:5px 13px;font-size:12px;
+  cursor:pointer;font-family:inherit;transition:all .2s}
+.adis:hover{background:rgba(255,210,80,.25)}
+
+@media(max-width:660px){.sb{display:none}}
+</style>
+</head>
+<body>
+<canvas id="cvs"></canvas>
+<div class="aurora"><div class="orb o1"></div><div class="orb o2"></div><div class="orb o3"></div><div class="orb o4"></div></div>
+<div class="aovl" id="aovl"></div>
+
+<div class="app">
+  <!-- Sidebar -->
+  <aside class="sb">
+    <div class="sb-head">
+      <div class="date-lbl" id="dateLbl"></div>
+      <div class="sb-title">任务规划</div>
+    </div>
+    <div class="wtabs" id="wtabs"></div>
+    <div class="tinp-row">
+      <input class="tinp" id="tinp" placeholder="添加任务…" maxlength="80">
+      <button class="tadd" onclick="addFromInput()" title="添加">+</button>
+    </div>
+    <div class="tstats">
+      <span class="tstat" id="stTotal">0 项</span>
+      <span class="tstat ok" id="stDone">完成 0</span>
+    </div>
+    <div class="tlist" id="tlist"></div>
+    <div class="rsec">
+      <div class="slbl">⏰ 到时提醒</div>
+      <div id="rlist"></div>
+    </div>
+    <div class="bbtns">
+      <button class="bbtn" onclick="clearDoneSel()">清除已完成</button>
+    </div>
+  </aside>
+
+  <!-- Chat -->
+  <main class="chat">
+    <header class="chat-hd">
+      <div class="bava">🤖</div>
+      <div>
+        <div class="bname">小新</div>
+        <div class="bstat"><span class="sdot"></span>在线 · 随时为你服务</div>
+      </div>
+    </header>
+    <div class="msgs" id="msgs"></div>
+    <footer class="inp-area">
+      <div class="qcmds">
+        <button class="qb" onclick="sq('今天还需要做什么')">📋 今日待办</button>
+        <button class="qb" onclick="sq('本周任务总览')">📅 本周</button>
+        <button class="qb" onclick="sq('查看提醒')">⏰ 提醒</button>
+        <button class="qb" onclick="sq('今天进度怎么样')">📊 进度</button>
+        <button class="qb" onclick="sq('鼓励一下我')">💪 鼓励</button>
+        <button class="qb" onclick="sq('帮助')">❓ 帮助</button>
+      </div>
+      <div class="iwrap">
+        <textarea class="cinp" id="cinp" placeholder="聊天，或说「下午3点提醒我开会」「明天要准备PPT」…" rows="1"></textarea>
+        <button class="sbtn" onclick="sendMsg()">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+            <line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/>
+          </svg>
+        </button>
+      </div>
+      <div class="hint">Enter 发送 · Shift+Enter 换行</div>
+    </footer>
+  </main>
+</div>
+
+<script>
+// ═══ PARTICLES ═══
+(function(){
+  const c=document.getElementById('cvs'),x=c.getContext('2d');
+  let W,H,P=[];const N=65,D=125;
+  function resize(){W=c.width=innerWidth;H=c.height=innerHeight}
+  function init(){P=[];for(let i=0;i<N;i++)P.push({x:Math.random()*W,y:Math.random()*H,vx:(Math.random()-.5)*.38,vy:(Math.random()-.5)*.38,r:Math.random()*1.4+.4,a:Math.random()*.45+.18})}
+  function draw(){
+    x.clearRect(0,0,W,H);
+    for(let i=0;i<N;i++){const p=P[i];for(let j=i+1;j<N;j++){const q=P[j],dx=p.x-q.x,dy=p.y-q.y,d=Math.sqrt(dx*dx+dy*dy);if(d<D){x.beginPath();x.strokeStyle=`rgba(124,111,255,${(1-d/D)*.22})`;x.lineWidth=.55;x.moveTo(p.x,p.y);x.lineTo(q.x,q.y);x.stroke()}}}
+    P.forEach(p=>{x.beginPath();x.arc(p.x,p.y,p.r,0,Math.PI*2);x.fillStyle=`rgba(176,168,255,${p.a})`;x.fill();p.x+=p.vx;p.y+=p.vy;if(p.x<0||p.x>W)p.vx*=-1;if(p.y<0||p.y>H)p.vy*=-1});
+    requestAnimationFrame(draw);
+  }
+  window.addEventListener('resize',()=>{resize();init()});
+  resize();init();draw();
+})();
+
+// ═══ DATA ═══
+const KEY='xn3';
+let db={todos:[],reminders:[]};
+function load(){try{db=JSON.parse(localStorage.getItem(KEY))||{todos:[],reminders:[]}}catch(e){db={todos:[],reminders:[]}}const cut=new Date();cut.setDate(cut.getDate()-14);db.todos=db.todos.filter(t=>new Date(t.date)>=cut)}
+function save(){localStorage.setItem(KEY,JSON.stringify(db))}
+load();
+
+// Date helpers
+function tds(d){return`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`}
+function today(){return tds(new Date())}
+function off(n){const d=new Date();d.setDate(d.getDate()+n);return tds(d)}
+function fmtDate(ds){if(ds===today())return'今天';if(ds===off(1))return'明天';if(ds===off(2))return'后天';if(ds===off(-1))return'昨天';const[y,m,d]=ds.split('-').map(Number),w=new Date(y,m-1,d);return`${m}/${d} 周${'日一二三四五六'[w.getDay()]}`}
+
+let selDate=today();
+
+// ═══ WEEK TABS ═══
+function buildTabs(){
+  const wrap=document.getElementById('wtabs');wrap.innerHTML='';
+  const days='日一二三四五六';
+  for(let i=-1;i<=6;i++){
+    const ds=off(i),d=new Date(ds+'T00:00:00');
+    const has=db.todos.some(t=>t.date===ds);
+    const tab=document.createElement('div');
+    tab.className='dtab'+(ds===today()?' today':'')+(ds===selDate?' active':'');
+    const lbl=i===-1?'昨天':i===0?'今天':i===1?'明天':'周'+days[d.getDay()];
+    tab.innerHTML=`<div class="dn">${lbl}</div><div class="dd">${d.getDate()}</div>${has?'<div class="dot"></div>':''}`;
+    tab.onclick=()=>{selDate=ds;renderAll()};
+    wrap.appendChild(tab);
+  }
+  wrap.querySelector('.active')?.scrollIntoView({block:'nearest',inline:'center'});
+}
+
+// ═══ TODOS ═══
+function addTodo(text,date){text=text.trim();if(!text)return false;db.todos.push({id:Date.now(),text,done:false,date:date||selDate});save();renderAll();return true}
+function addFromInput(){const i=document.getElementById('tinp');if(addTodo(i.value))i.value=''}
+function toggle(id){const t=db.todos.find(t=>t.id===id);if(t){t.done=!t.done;save();renderAll()}}
+function delTodo(id){db.todos=db.todos.filter(t=>t.id!==id);save();renderAll()}
+function clearDoneSel(){db.todos=db.todos.filter(t=>!(t.date===selDate&&t.done));save();renderAll()}
+function todayTodos(){return db.todos.filter(t=>t.date===today())}
+function selTodos(){return db.todos.filter(t=>t.date===selDate)}
+
+function renderTodos(){
+  const list=document.getElementById('tlist'),items=selTodos();
+  if(!items.length){list.innerHTML='<div class="tempty">✨ 这天还没有任务</div>';return}
+  list.innerHTML=items.map(t=>`
+    <div class="titem${t.done?' done':''}">
+      <div class="chk" onclick="toggle(${t.id})">
+        <svg class="chkico" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+      </div>
+      <div class="tlbl">${esc(t.text)}</div>
+      <button class="tdel" onclick="delTodo(${t.id})">
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+      </button>
+    </div>`).join('');
+  const done=items.filter(t=>t.done).length;
+  document.getElementById('stTotal').textContent=`共 ${items.length} 项`;
+  document.getElementById('stDone').textContent=`完成 ${done}`;
+}
+
+// ═══ REMINDERS ═══
+function addReminder(text,timeStr,daily,date){
+  db.reminders.push({id:Date.now(),text:text.trim(),time:timeStr,daily:!!daily,date:daily?null:(date||today()),lastTriggered:null});
+  save();renderReminders();
+}
+function delReminder(id){db.reminders=db.reminders.filter(r=>r.id!==id);save();renderReminders()}
+function renderReminders(){
+  const el=document.getElementById('rlist');
+  if(!db.reminders.length){el.innerHTML='<div class="rnone">暂无提醒，说「下午3点提醒我…」</div>';return}
+  el.innerHTML=db.reminders.map(r=>`
+    <div class="ritem">
+      <span class="rtime">${r.time}</span>
+      <span class="rtxt">${esc(r.text)}</span>
+      ${r.daily?'<span class="rdaily">每天</span>':`<span style="font-size:10px;color:var(--mt)">${fmtDate(r.date)}</span>`}
+      <button class="rdel" onclick="delReminder(${r.id})">✕</button>
+    </div>`).join('');
+}
+
+function checkReminders(){
+  const now=new Date(),hm=`${String(now.getHours()).padStart(2,'0')}:${String(now.getMinutes()).padStart(2,'0')}`,td=today();
+  db.reminders.forEach(r=>{
+    if(r.time!==hm)return;
+    if(r.daily){if(r.lastTriggered===td)return;r.lastTriggered=td}
+    else{if(r.date!==td||r.lastTriggered)return;r.lastTriggered=td}
+    fireReminder(r);save();
+  });
+}
+function fireReminder(r){
+  showAlert(`${r.text}`);
+  appendMsg(`⏰ <b>到点提醒</b><br>「${esc(r.text)}」时间到啦！`,'bot');
+  if(Notification.permission==='granted')new Notification('小新提醒你',{body:r.text});
+}
+function showAlert(txt){
+  const o=document.getElementById('aovl'),c=document.createElement('div');
+  c.className='acard';c.innerHTML=`<div class="atitle">⏰ 提醒到了</div><div class="atxt">${esc(txt)}</div><button class="adis" onclick="this.closest('.acard').remove()">知道了</button>`;
+  o.appendChild(c);setTimeout(()=>c.remove(),15000);
+}
+setInterval(checkReminders,30000);
+if('Notification'in window&&Notification.permission==='default')Notification.requestPermission();
+
+// ═══ DATE LABEL ═══
+function updateDateLbl(){const d=new Date();document.getElementById('dateLbl').textContent=`${d.getFullYear()}年${d.getMonth()+1}月${d.getDate()}日 星期${'日一二三四五六'[d.getDay()]}`}
+updateDateLbl();
+
+function renderAll(){buildTabs();renderTodos();renderReminders()}
+renderAll();
+
+// ═══ CHAT UTILS ═══
+function esc(s){const d=document.createElement('div');d.textContent=s;return d.innerHTML}
+function nowt(){const d=new Date();return`${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}`}
+function pick(a){return a[Math.floor(Math.random()*a.length)]}
+function appendMsg(html,role){
+  const wrap=document.getElementById('msgs'),div=document.createElement('div');
+  div.className=`msg ${role==='user'?'u':'bot'}`;
+  const ava=role==='user'?'🙂':'🤖';
+  div.innerHTML=`${role!=='user'?`<div class="mava">${ava}</div>`:''}
+    <div class="mbody"${role==='user'?' style="align-items:flex-end"':''}>
+      <div class="bbl">${html}</div><div class="mtime">${nowt()}</div>
+    </div>${role==='user'?`<div class="mava">${ava}</div>`:''}`;
+  wrap.appendChild(div);wrap.scrollTop=wrap.scrollHeight;
+}
+function showTyping(){const wrap=document.getElementById('msgs'),d=document.createElement('div');d.className='msg bot';d.id='xnt';d.innerHTML=`<div class="mava">🤖</div><div class="typing"><div class="td"></div><div class="td"></div><div class="td"></div></div>`;wrap.appendChild(d);wrap.scrollTop=wrap.scrollHeight}
+function hideTyping(){document.getElementById('xnt')?.remove()}
+
+// ═══ TIME PARSING ═══
+const CN={'零':0,'一':1,'二':2,'两':2,'三':3,'四':4,'五':5,'六':6,'七':7,'八':8,'九':9,'十':10,'十一':11,'十二':12};
+function parseCN(s){
+  s=(s||'').trim();if(/^\d+$/.test(s))return parseInt(s);
+  if(CN[s]!==undefined)return CN[s];
+  if(s==='十')return 10;
+  if(/^十[一二三四五六七八九]$/.test(s))return 10+CN[s[1]];
+  if(/^[一二三四五六七八九]十$/.test(s))return CN[s[0]]*10;
+  if(/^[一二三四五六七八九]十[一二三四五六七八九]$/.test(s))return CN[s[0]]*10+CN[s[2]];
+  return -1;
+}
+function parseTime(text){
+  const re=/(上午|早上|早|中午|下午|傍晚|晚上|晚)?\s*([零一二两三四五六七八九十]+|\d+)\s*点\s*([零一二两三四五六七八九十]+|半|\d+)?\s*分?/;
+  const m=text.match(re);if(!m)return null;
+  const pre=m[1];let h=parseCN(m[2]);if(h<0)return null;
+  let min=0;if(m[3])min=m[3]==='半'?30:parseCN(m[3]);if(min<0)min=0;
+  if(['下午','傍晚','晚上','晚'].includes(pre)&&h<12)h+=12;
+  else if(pre==='中午'&&h<12)h=12;
+  else if(!pre&&h>=1&&h<=6)h+=12;
+  return`${String(h).padStart(2,'0')}:${String(min).padStart(2,'0')}`;
+}
+function parseDateInfo(text){
+  if(/每天|每日/.test(text))return{daily:true};
+  if(/后天|大后天/.test(text))return{date:/大后天/.test(text)?off(3):off(2)};
+  if(/明天/.test(text))return{date:off(1)};
+  if(/昨天/.test(text))return{date:off(-1)};
+  const wm=text.match(/(?:周|星期)([一二三四五六日天])/);
+  if(wm){const dm={'一':1,'二':2,'三':3,'四':4,'五':5,'六':6,'日':0,'天':0};const t=dm[wm[1]];const d=new Date();let df=t-d.getDay();if(df<=0)df+=7;return{date:off(df)}}
+  const nm=text.match(/(\d+)\s*月\s*(\d+)\s*[日号]/);
+  if(nm)return{date:`${new Date().getFullYear()}-${nm[1].padStart(2,'0')}-${nm[2].padStart(2,'0')}`};
+  return{date:today()};
+}
+
+// ═══ BOT BRAIN ═══
+function botReply(raw){
+  const text=raw.trim(),lo=text.toLowerCase();
+
+  // 提醒
+  const ht=parseTime(text);
+  if(ht&&/提醒/.test(text)){
+    const cm=text.match(/提醒(?:我|一下)?\s*(.+)/);
+    if(cm){
+      let content=cm[1].replace(/(上午|早上|早|中午|下午|傍晚|晚上|晚)?\s*([零一二两三四五六七八九十]+|\d+)\s*点\s*([零一二两三四五六七八九十]+|半|\d+)?\s*分?/,'').trim()||cm[1].trim();
+      const di=parseDateInfo(text);
+      addReminder(content,ht,di.daily,di.date);
+      return`好的！我会在 <b>${ht}</b> 提醒你「${esc(content)}」⏰${di.daily?' (每天)':''}`;
+    }
+  }
+
+  // 添加任务
+  const addM=text.match(/^(?:(?:帮我)?(?:添加|新增|记一下|加(?:一个)?|记录)(?:任务)?[：:\s]+|(?:我)?(?:今天|明天|后天|大后天|周[一二三四五六日天])?(?:要|需要|得|想做|打算)[\s]?|(?:今天|明天|后天|大后天|周[一二三四五六日天])(?:要|需要|得)[\s]?)(.+)/);
+  if(addM){
+    const task=addM[1].trim();
+    const di=parseDateInfo(text);
+    const targetDate=di.daily?today():(di.date||today());
+    addTodo(task,targetDate);
+    return pick([`好的！「${esc(task)}」已添加到${fmtDate(targetDate)} ✅`,`记下来了！${fmtDate(targetDate)} 要做「${esc(task)}」 📝`]);
+  }
+
+  // 标记完成
+  const dm=text.match(/^(?:完成了?|做完了?|搞定了?|已完成)[：:\s]*[「『"]?(.+?)[」』"]?$/);
+  if(dm){
+    const kw=dm[1].trim(),idx=db.todos.findIndex(t=>t.date===today()&&!t.done&&t.text.includes(kw));
+    if(idx!==-1){db.todos[idx].done=true;save();renderAll();const done=todayTodos().filter(t=>t.done).length,all=todayTodos().length;return`🎉 完成！「${esc(db.todos[idx].text)}」 今日 ${done}/${all}`}
+    return`没找到「${esc(kw)}」的未完成任务，说「查看今日待办」确认一下~`;
+  }
+
+  // 删除
+  const delm=text.match(/^(?:删除|取消|移除)[：:\s]*[「『"]?(.+?)[」』"]?(?:任务)?$/);
+  if(delm){const kw=delm[1].trim(),idx=db.todos.findIndex(t=>t.text.includes(kw));if(idx!==-1){const nm=db.todos[idx].text;db.todos.splice(idx,1);save();renderAll();return`已删除「${esc(nm)}」✓`}return`没找到「${esc(kw)}」~`}
+
+  // 今天还需要做什么
+  if(/今天还(?:需要|要|有什么)|今日待办|还没做什么|待办/.test(lo)){
+    const p=todayTodos().filter(t=>!t.done);
+    if(!p.length){if(!todayTodos().length)return'今天还没有任务！说「我今天要…」来添加 😊';return'🎉 今天的任务都完成啦！你超棒的！'}
+    return`📋 <b>今日还需做（${p.length} 项）</b><br><br>`+p.map((t,i)=>`${i+1}. ${esc(t.text)}`).join('<br>');
+  }
+
+  // 查看任务
+  if(/查看|今天任务|今日清单|今天计划/.test(lo)){
+    const items=todayTodos();if(!items.length)return'今天还没有任务 😊';
+    const done=items.filter(t=>t.done),pend=items.filter(t=>!t.done);
+    let r=`📋 <b>今日任务</b>（${done.length}/${items.length} 完成）<br><br>`;
+    if(pend.length)r+='待完成：<br>'+pend.map(t=>`• ${esc(t.text)}`).join('<br>');
+    if(done.length)r+=(pend.length?'<br><br>':'')+'已完成：<br>'+done.map(t=>`✓ ${esc(t.text)}`).join('<br>');
+    return r;
+  }
+
+  // 本周总览
+  if(/本周|这周|一周|周计划|全周/.test(lo)){
+    let r='📅 <b>本周任务</b><br><br>';let any=false;
+    for(let i=-1;i<=6;i++){const ds=off(i),items=db.todos.filter(t=>t.date===ds);if(!items.length)continue;any=true;const done=items.filter(t=>t.done).length;r+=`<b>${fmtDate(ds)}</b>（${done}/${items.length}）<br>`;r+=items.map(t=>`${t.done?'✓':'•'} ${esc(t.text)}`).join('<br>')+'<br><br>'}
+    return any?r.trim():'本周还没有任务，快来规划吧！📝';
+  }
+
+  // 查看提醒
+  if(/查看提醒|提醒列表|我的提醒/.test(lo)){
+    if(!db.reminders.length)return'暂无提醒，说「下午3点提醒我…」添加 ⏰';
+    return'⏰ <b>提醒事项</b><br><br>'+db.reminders.map(r=>`${r.time}${r.daily?' [每天]':''} — ${esc(r.text)}`).join('<br>');
+  }
+
+  // 进度
+  if(/进度|完成了多少|还剩/.test(lo)){
+    const items=todayTodos();if(!items.length)return'今天还没有任务，先添加计划吧！';
+    const done=items.filter(t=>t.done).length,pct=Math.round(done/items.length*100);
+    let msg=`📊 今日进度 ${done}/${items.length}（${pct}%）<br>`;
+    if(pct===100)msg+='🏆 全部完成！超棒！';else if(pct>=50)msg+=`💪 过半了！还剩 ${items.length-done} 项，冲！`;else if(done>0)msg+=`🚀 已开始！加油！`;else msg+='🌅 任务还没开始，加油！';
+    return msg;
+  }
+
+  // 时间
+  if(/几点|现在时间|当前时间/.test(lo)){const d=new Date(),h=d.getHours(),g=h<6?'深夜了':h<12?'上午好':h<14?'中午好':h<18?'下午好':'晚上好';return`${g}！现在 ${String(h).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')} ⏰`}
+
+  // 帮助
+  if(/帮助|怎么用|功能|help/.test(lo)){return`我能帮你做这些 😊<br><br>📝 <b>任务管理</b><br>• 「我今天要 xxx」/ 「明天要 xxx」<br>• 「完成了 xxx」— 标记完成<br>• 「删除 xxx」— 删除任务<br>• 「今天还需要做什么」— 待办清单<br>• 「本周任务总览」— 查看全周<br><br>⏰ <b>时间提醒</b><br>• 「下午3点提醒我开会」<br>• 「每天早上8点提醒我喝水」<br>• 「明天下午2点半提醒我交报告」<br><br>左侧面板可切换日期查看任务 ✨`}
+
+  // 打招呼
+  if(/^(你好|hi|hello|嗨|哈喽|早|早上好|下午好|晚上好|hey)/.test(lo)){const h=new Date().getHours(),g=h<12?'早上好':h<18?'下午好':'晚上好';const p=todayTodos().filter(t=>!t.done);return pick([`${g}！我是小新 🤖`,`${g}！有什么需要帮忙的吗？😊`])+(p.length?`<br>今天还有 <b>${p.length}</b> 项待完成哦！`:'')}
+
+  // 鼓励
+  if(/鼓励|加油|打气|累了|好难|坚持|焦虑|压力/.test(lo)){return pick(['你已经很努力了！每一步都算数，继续加油 💪','相信自己，你比想象的更强大 🌟','难的时候休息一下，充好电再出发 💫','再难的事也会被你搞定！今天的努力都值得 🔥'])}
+
+  // 谢谢
+  if(/谢谢|感谢|多谢/.test(lo)){return pick(['不客气！随时找我 😊','能帮到你就好！加油 ✨','应该的！还有什么需要吗？'])}
+
+  // 默认
+  return pick(['我在！有任务要记录吗？说「我今天要…」就行 📝','嗯嗯！顺便问一句，今天还有什么计划？😊','有需要提醒的吗？说「下午X点提醒我…」⏰']);
+}
+
+// ═══ SEND ═══
+function sendMsg(){const inp=document.getElementById('cinp'),text=inp.value.trim();if(!text)return;appendMsg(esc(text),'user');inp.value='';inp.style.height='auto';showTyping();setTimeout(()=>{hideTyping();appendMsg(botReply(text),'bot')},480+Math.random()*320)}
+function sq(t){document.getElementById('cinp').value=t;sendMsg()}
+
+const ci=document.getElementById('cinp');
+ci.addEventListener('keydown',e=>{if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();sendMsg()}});
+ci.addEventListener('input',function(){this.style.height='auto';this.style.height=Math.min(this.scrollHeight,120)+'px'});
+document.getElementById('tinp').addEventListener('keydown',e=>{if(e.key==='Enter')addFromInput()});
+
+// ═══ WELCOME ═══
+(function(){
+  const d=new Date(),h=d.getHours(),g=h<6?'夜深了':h<12?'早上好':h<14?'中午好':h<18?'下午好':'晚上好';
+  const p=todayTodos().filter(t=>!t.done),all=todayTodos();
+  let msg=`${g}！我是小新，你的专属助手 🤖<br>今天是 ${d.getMonth()+1}月${d.getDate()}日 星期${'日一二三四五六'[d.getDay()]}`;
+  if(all.length){const done=all.filter(t=>t.done).length;msg+=`<br><br>今天共 <b>${all.length}</b> 个任务，已完成 <b>${done}</b> 个`;if(p.length){msg+=`，还有 <b>${p.length}</b> 项待完成：<br>`+p.slice(0,3).map(t=>`• ${esc(t.text)}`).join('<br>');if(p.length>3)msg+=`<br>…还有 ${p.length-3} 项`}else msg+=' 🎉 全部完成！'}
+  else msg+='<br><br>今天还没有任务，说「我今天要…」开始规划吧 😊';
+  if(db.reminders.length)msg+=`<br><br>⏰ 已设置 ${db.reminders.length} 个提醒`;
+  setTimeout(()=>appendMsg(msg,'bot'),400);
+})();
+</script>
+</body>
+</html>

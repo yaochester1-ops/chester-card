@@ -1,0 +1,702 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>oe的吃饭管理器</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: 'PingFang SC', 'Microsoft YaHei', sans-serif;
+      background: linear-gradient(135deg, #ff9a56 0%, #ff6b6b 50%, #ee5a24 100%);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 30px 16px 50px;
+    }
+
+    h1 { color: #fff; font-size: 2rem; margin-bottom: 4px; text-shadow: 0 2px 8px rgba(0,0,0,.2); }
+    .subtitle { color: rgba(255,255,255,.8); font-size: .9rem; margin-bottom: 24px; }
+
+    .card {
+      background: #fff;
+      border-radius: 20px;
+      padding: 20px;
+      width: 100%;
+      max-width: 460px;
+      box-shadow: 0 12px 40px rgba(0,0,0,.18);
+      margin-bottom: 18px;
+    }
+
+    /* ===== 分类标签栏 ===== */
+    .cat-bar { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin-bottom: 16px; }
+    .cat-tab {
+      display: flex; align-items: center; gap: 4px;
+      padding: 7px 14px; border-radius: 20px;
+      border: 2px solid #ffe0cc; background: #fff;
+      color: #aaa; font-size: .88rem; cursor: pointer;
+      transition: all .2s; white-space: nowrap;
+    }
+    .cat-tab:hover { border-color: #ffab80; color: #ee5a24; }
+    .cat-tab.active { background: #ff6b6b; border-color: #ff6b6b; color: #fff; font-weight: bold; }
+    .cat-tab .cat-del { font-size: .8rem; opacity: .7; margin-left: 2px; }
+    .cat-tab .cat-del:hover { opacity: 1; }
+    .btn-add-cat {
+      padding: 7px 12px; border-radius: 20px;
+      border: 2px dashed #ffab80; background: transparent;
+      color: #ff6b6b; font-size: .88rem; cursor: pointer;
+      transition: all .2s; white-space: nowrap;
+    }
+    .btn-add-cat:hover { background: #fff4ef; }
+
+    .cat-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; }
+    .cat-title { font-size: 1rem; font-weight: bold; color: #333; }
+    .cat-count { font-size: .8rem; color: #bbb; }
+
+    .input-row { display: flex; gap: 8px; margin-bottom: 14px; }
+    .input-row input {
+      flex: 1; padding: 9px 13px;
+      border: 2px solid #ffe0cc; border-radius: 12px;
+      font-size: .95rem; outline: none; transition: border .2s;
+    }
+    .input-row input:focus { border-color: #ff6b6b; }
+    .btn-add {
+      padding: 9px 16px; background: #ff6b6b; color: #fff;
+      border: none; border-radius: 12px; font-size: .95rem;
+      cursor: pointer; transition: background .2s, transform .1s; white-space: nowrap;
+    }
+    .btn-add:hover { background: #ee5a24; }
+    .btn-add:active { transform: scale(.96); }
+
+    .tags { display: flex; flex-wrap: wrap; gap: 8px; min-height: 34px; }
+    .tag {
+      display: flex; align-items: center; gap: 5px;
+      background: #fff4ef; color: #ee5a24;
+      border: 1.5px solid #ffccb3; border-radius: 20px;
+      padding: 5px 11px; font-size: .88rem;
+      animation: pop .18s ease;
+    }
+    @keyframes pop {
+      from { transform: scale(.6); opacity: 0; }
+      to   { transform: scale(1);  opacity: 1; }
+    }
+    .tag .del { cursor: pointer; color: #ffab80; transition: color .15s; }
+    .tag .del:hover { color: #ee5a24; }
+    .empty-hint { color: #ccc; font-size: .85rem; }
+
+    /* ===== 两阶段转盘 ===== */
+    .steps {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0;
+      margin-bottom: 18px;
+    }
+    .step {
+      display: flex; align-items: center; gap: 6px;
+      padding: 8px 16px; border-radius: 20px;
+      font-size: .88rem; font-weight: bold;
+      transition: all .3s;
+      color: #ccc;
+    }
+    .step.active { color: #ee5a24; }
+    .step.done { color: #69db7c; }
+    .step-num {
+      width: 22px; height: 22px;
+      border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+      font-size: .78rem; font-weight: bold;
+      background: #eee; color: #bbb;
+      transition: all .3s;
+    }
+    .step.active .step-num { background: #ff6b6b; color: #fff; }
+    .step.done .step-num { background: #69db7c; color: #fff; }
+    .step-arrow { color: #ddd; font-size: .9rem; padding: 0 4px; }
+
+    /* 选中菜系提示 */
+    .chosen-cat {
+      text-align: center;
+      margin-bottom: 14px;
+      min-height: 28px;
+      font-size: .9rem;
+    }
+    .chosen-cat .badge {
+      display: inline-block;
+      background: linear-gradient(135deg, #ff6b6b, #ee5a24);
+      color: #fff;
+      padding: 5px 16px;
+      border-radius: 20px;
+      font-weight: bold;
+      animation: pop .25s ease;
+    }
+
+    .wheel-wrap {
+      position: relative; width: 260px; height: 260px;
+      margin: 0 auto 18px;
+    }
+    canvas#wheel {
+      border-radius: 50%;
+      box-shadow: 0 6px 24px rgba(0,0,0,.2);
+      transition: opacity .3s;
+    }
+    .pointer {
+      position: absolute; top: -18px; left: 50%;
+      transform: translateX(-50%);
+      width: 0; height: 0;
+      border-left: 12px solid transparent;
+      border-right: 12px solid transparent;
+      border-top: 28px solid #fff;
+      filter: drop-shadow(0 3px 4px rgba(0,0,0,.3));
+    }
+
+    .btn-spin {
+      display: block; width: 100%; padding: 14px;
+      background: linear-gradient(135deg, #ff6b6b, #ee5a24);
+      color: #fff; border: none; border-radius: 14px;
+      font-size: 1.05rem; font-weight: bold; cursor: pointer;
+      box-shadow: 0 4px 14px rgba(238,90,36,.4);
+      transition: opacity .2s, transform .1s;
+    }
+    .btn-spin:hover { opacity: .92; }
+    .btn-spin:active { transform: scale(.97); }
+    .btn-spin:disabled { opacity: .5; cursor: not-allowed; }
+
+    .btn-reset {
+      display: block; width: 100%; padding: 10px; margin-top: 10px;
+      background: transparent; color: #ccc;
+      border: 2px solid #eee; border-radius: 12px;
+      font-size: .88rem; cursor: pointer; transition: all .2s;
+    }
+    .btn-reset:hover { border-color: #ffab80; color: #ee5a24; }
+
+    /* ===== 结果弹窗 ===== */
+    .overlay {
+      position: fixed; inset: 0;
+      background: rgba(0,0,0,.45);
+      display: flex; align-items: center; justify-content: center;
+      opacity: 0; pointer-events: none;
+      transition: opacity .3s; z-index: 100;
+    }
+    .overlay.show { opacity: 1; pointer-events: all; }
+    .result-box {
+      background: #fff; border-radius: 24px;
+      padding: 36px 40px; text-align: center;
+      max-width: 300px; width: 90%;
+      transform: scale(.8); transition: transform .3s;
+      box-shadow: 0 20px 60px rgba(0,0,0,.25);
+    }
+    .overlay.show .result-box { transform: scale(1); }
+    .result-emoji { font-size: 3.5rem; margin-bottom: 10px; }
+    .result-cat { color: #bbb; font-size: .82rem; margin-bottom: 4px; }
+    .result-label { color: #888; font-size: .95rem; margin-bottom: 8px; }
+    .result-name { font-size: 2rem; font-weight: bold; color: #ee5a24; margin-bottom: 24px; }
+    .result-actions { display: flex; gap: 10px; }
+    .btn-close {
+      flex: 1; padding: 12px;
+      background: #ff6b6b; color: #fff; border: none;
+      border-radius: 12px; font-size: 1rem; cursor: pointer; transition: background .2s;
+    }
+    .btn-close:hover { background: #ee5a24; }
+    .btn-again {
+      flex: 1; padding: 12px;
+      background: #f5f5f5; color: #888; border: none;
+      border-radius: 12px; font-size: 1rem; cursor: pointer; transition: background .2s;
+    }
+    .btn-again:hover { background: #eee; }
+
+    /* ===== 新增分类弹窗 ===== */
+    .modal-overlay {
+      position: fixed; inset: 0;
+      background: rgba(0,0,0,.4);
+      display: flex; align-items: center; justify-content: center;
+      opacity: 0; pointer-events: none;
+      transition: opacity .2s; z-index: 200;
+    }
+    .modal-overlay.show { opacity: 1; pointer-events: all; }
+    .modal-box {
+      background: #fff; border-radius: 18px;
+      padding: 28px 28px 20px;
+      width: 86%; max-width: 320px;
+      box-shadow: 0 12px 40px rgba(0,0,0,.2);
+    }
+    .modal-box h3 { font-size: 1.1rem; margin-bottom: 16px; color: #333; }
+    .modal-box input {
+      width: 100%; padding: 10px 13px;
+      border: 2px solid #ffe0cc; border-radius: 12px;
+      font-size: 1rem; outline: none; margin-bottom: 14px;
+    }
+    .modal-box input:focus { border-color: #ff6b6b; }
+    .modal-actions { display: flex; gap: 10px; }
+    .modal-actions button { flex: 1; padding: 10px; border-radius: 12px; border: none; font-size: .95rem; cursor: pointer; }
+    .btn-confirm { background: #ff6b6b; color: #fff; }
+    .btn-confirm:hover { background: #ee5a24; }
+    .btn-cancel { background: #f5f5f5; color: #888; }
+    .btn-cancel:hover { background: #eee; }
+
+    /* ===== 人数选择器 ===== */
+    .people-card {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    .people-label { font-size: .95rem; color: #555; font-weight: bold; }
+    .people-label span { font-size: .8rem; color: #bbb; font-weight: normal; margin-left: 4px; }
+    .people-counter {
+      display: flex;
+      align-items: center;
+      gap: 0;
+      border: 2px solid #ffe0cc;
+      border-radius: 14px;
+      overflow: hidden;
+    }
+    .people-counter button {
+      width: 38px; height: 38px;
+      border: none; background: #fff;
+      font-size: 1.2rem; color: #ff6b6b;
+      cursor: pointer; transition: background .15s;
+      display: flex; align-items: center; justify-content: center;
+    }
+    .people-counter button:hover { background: #fff4ef; }
+    .people-counter button:disabled { color: #ddd; cursor: not-allowed; }
+    .people-num {
+      width: 44px; text-align: center;
+      font-size: 1.2rem; font-weight: bold;
+      color: #ee5a24; border-left: 1.5px solid #ffe0cc;
+      border-right: 1.5px solid #ffe0cc;
+      line-height: 38px;
+    }
+    .result-people {
+      font-size: .88rem; color: #aaa; margin-bottom: 16px;
+    }
+    .result-people strong { color: #ff6b6b; }
+  </style>
+</head>
+<body>
+
+<h1>🍽️ oe的吃饭管理器</h1>
+<p class="subtitle">两步转盘：先选菜系，再选菜品！</p>
+
+<!-- 分类管理卡片 -->
+<div class="card">
+  <div class="cat-bar" id="catBar"></div>
+  <div class="cat-header">
+    <span class="cat-title" id="catTitle">加载中...</span>
+    <span class="cat-count" id="catCount"></span>
+  </div>
+  <div class="input-row">
+    <input id="foodInput" type="text" placeholder="添加菜品，如：麻婆豆腐" maxlength="12">
+    <button class="btn-add" onclick="addFood()">添加</button>
+  </div>
+  <div class="tags" id="tags"></div>
+</div>
+
+<!-- 人数卡片 -->
+<div class="card people-card">
+  <div class="people-label">今天几个人吃？<span>结果会显示人数</span></div>
+  <div class="people-counter">
+    <button id="btnMinus" onclick="changePeople(-1)">−</button>
+    <div class="people-num" id="peopleNum">2</div>
+    <button id="btnPlus"  onclick="changePeople(+1)">+</button>
+  </div>
+</div>
+
+<!-- 两阶段转盘卡片 -->
+<div class="card">
+  <!-- 步骤指示 -->
+  <div class="steps">
+    <div class="step" id="step1">
+      <div class="step-num">1</div>
+      <span>选菜系</span>
+    </div>
+    <div class="step-arrow">›</div>
+    <div class="step" id="step2">
+      <div class="step-num">2</div>
+      <span>选菜品</span>
+    </div>
+  </div>
+
+  <!-- 选中菜系提示 -->
+  <div class="chosen-cat" id="chosenCat"></div>
+
+  <!-- 转盘 -->
+  <div class="wheel-wrap">
+    <div class="pointer"></div>
+    <canvas id="wheel" width="260" height="260"></canvas>
+  </div>
+
+  <button class="btn-spin" id="spinBtn" onclick="spin()">🎲 第一转：选菜系</button>
+  <button class="btn-reset" id="resetBtn" onclick="resetSpin()" style="display:none">↩ 重新开始</button>
+</div>
+
+<!-- 结果弹窗 -->
+<div class="overlay" id="overlay">
+  <div class="result-box">
+    <div class="result-emoji">🎉</div>
+    <div class="result-cat" id="resultCat"></div>
+    <div class="result-label">今晚就决定吃</div>
+    <div class="result-name" id="resultName">—</div>
+    <div class="result-people" id="resultPeople"></div>
+    <div class="result-actions">
+      <button class="btn-again" onclick="closeResult(true)">再转一次</button>
+      <button class="btn-close" onclick="closeResult(false)">就这个了！</button>
+    </div>
+  </div>
+</div>
+
+<!-- 新增分类弹窗 -->
+<div class="modal-overlay" id="modalOverlay">
+  <div class="modal-box">
+    <h3>新增分类</h3>
+    <input id="catInput" type="text" placeholder="如：泰国菜、西餐、东南亚" maxlength="8">
+    <div class="modal-actions">
+      <button class="btn-cancel" onclick="closeModal()">取消</button>
+      <button class="btn-confirm" onclick="confirmAddCat()">确定</button>
+    </div>
+  </div>
+</div>
+
+<script>
+  const STORAGE_KEY = 'wanfan_v3';
+  const COLORS = [
+    '#FF6B6B','#FFA94D','#FFD43B','#69DB7C',
+    '#4DABF7','#9775FA','#F783AC','#63E6BE',
+    '#FFA8A8','#FFEC99','#74C0FC','#A9E34B'
+  ];
+
+  const DEFAULT_DATA = {
+    categories: [
+      { id: 'cn', name: '🇨🇳 中餐', foods: ['火锅','炒菜','烤鸭','麻辣烫','煲仔饭'] },
+      { id: 'kr', name: '🇰🇷 韩料', foods: ['韩式烤肉','部队锅','炸鸡','拌饭','冷面'] },
+      { id: 'jp', name: '🇯🇵 日料', foods: ['寿司','拉面','天妇罗','鳗鱼饭','刺身'] },
+      { id: 'mx', name: '🌮 墨西哥', foods: ['玉米卷','墨西哥饭','辣味汤','玉米片','布里托'] },
+    ],
+    activeCat: 'cn'
+  };
+
+  let data;
+  let spinning = false;
+  let currentAngle = 0;
+  let peopleCount = 2;
+
+  // phase: 1 = 选菜系, 2 = 选菜品
+  let phase = 1;
+  let chosenCatId = null;
+
+  function changePeople(delta) {
+    peopleCount = Math.max(1, Math.min(20, peopleCount + delta));
+    document.getElementById('peopleNum').textContent = peopleCount;
+    document.getElementById('btnMinus').disabled = peopleCount <= 1;
+    document.getElementById('btnPlus').disabled  = peopleCount >= 20;
+    localStorage.setItem('wanfan_people', peopleCount);
+  }
+
+  function loadPeople() {
+    const saved = parseInt(localStorage.getItem('wanfan_people'));
+    if (!isNaN(saved)) peopleCount = Math.max(1, Math.min(20, saved));
+    document.getElementById('peopleNum').textContent = peopleCount;
+    document.getElementById('btnMinus').disabled = peopleCount <= 1;
+    document.getElementById('btnPlus').disabled  = peopleCount >= 20;
+  }
+
+  function load() {
+    try {
+      const raw = localStorage.getItem(STORAGE_KEY);
+      data = raw ? JSON.parse(raw) : JSON.parse(JSON.stringify(DEFAULT_DATA));
+    } catch(e) {
+      data = JSON.parse(JSON.stringify(DEFAULT_DATA));
+    }
+  }
+
+  function save() { localStorage.setItem(STORAGE_KEY, JSON.stringify(data)); }
+
+  function getActiveCat() {
+    return data.categories.find(c => c.id === data.activeCat) || data.categories[0];
+  }
+
+  // ===== 渲染分类管理区 =====
+  function renderCatBar() {
+    const bar = document.getElementById('catBar');
+    bar.innerHTML = data.categories.map(c =>
+      `<button class="cat-tab ${c.id === data.activeCat ? 'active' : ''}" onclick="switchCat('${c.id}')">
+        ${c.name}
+        ${data.categories.length > 1
+          ? `<span class="cat-del" onclick="event.stopPropagation();deleteCat('${c.id}')">×</span>`
+          : ''}
+      </button>`
+    ).join('') + `<button class="btn-add-cat" onclick="openModal()">+ 新分类</button>`;
+  }
+
+  function renderFoods() {
+    const cat = getActiveCat();
+    document.getElementById('catTitle').textContent = cat.name;
+    document.getElementById('catCount').textContent = `${cat.foods.length} 项`;
+    const container = document.getElementById('tags');
+    container.innerHTML = cat.foods.length === 0
+      ? '<span class="empty-hint">还没有菜品，快去添加吧～</span>'
+      : cat.foods.map((f, i) =>
+          `<span class="tag">${f}<span class="del" onclick="removeFood(${i})">×</span></span>`
+        ).join('');
+  }
+
+  function renderWheel() {
+    if (phase === 1) {
+      // 第一转：显示所有菜系
+      const items = data.categories.map((c, i) => ({ label: c.name, color: COLORS[i % COLORS.length] }));
+      drawWheel(items, currentAngle);
+    } else {
+      // 第二转：显示选中菜系的菜品
+      const cat = data.categories.find(c => c.id === chosenCatId);
+      if (!cat) return;
+      const items = cat.foods.map((f, i) => ({ label: f, color: COLORS[i % COLORS.length] }));
+      drawWheel(items, currentAngle);
+    }
+  }
+
+  function renderSteps() {
+    const s1 = document.getElementById('step1');
+    const s2 = document.getElementById('step2');
+    if (phase === 1) {
+      s1.className = 'step active';
+      s2.className = 'step';
+    } else {
+      s1.className = 'step done';
+      s2.className = 'step active';
+    }
+  }
+
+  function renderChosenCat() {
+    const el = document.getElementById('chosenCat');
+    if (phase === 2 && chosenCatId) {
+      const cat = data.categories.find(c => c.id === chosenCatId);
+      el.innerHTML = cat ? `<span class="badge">${cat.name} 已选中！</span>` : '';
+    } else {
+      el.innerHTML = '';
+    }
+  }
+
+  function renderAll() {
+    renderCatBar();
+    renderFoods();
+    renderSteps();
+    renderChosenCat();
+    renderWheel();
+  }
+
+  // ===== 转盘交互 =====
+  function switchCat(id) {
+    data.activeCat = id;
+    save();
+    renderCatBar();
+    renderFoods();
+  }
+
+  function addFood() {
+    const input = document.getElementById('foodInput');
+    const val = input.value.trim();
+    if (!val) return;
+    const cat = getActiveCat();
+    if (cat.foods.includes(val)) { input.select(); return; }
+    cat.foods.push(val);
+    input.value = '';
+    save();
+    renderFoods();
+    if (phase === 2 && chosenCatId === cat.id) renderWheel();
+  }
+
+  function removeFood(i) {
+    const cat = getActiveCat();
+    cat.foods.splice(i, 1);
+    save();
+    renderFoods();
+    if (phase === 2 && chosenCatId === cat.id) renderWheel();
+  }
+
+  function deleteCat(id) {
+    if (data.categories.length <= 1) return;
+    data.categories = data.categories.filter(c => c.id !== id);
+    if (data.activeCat === id) data.activeCat = data.categories[0].id;
+    if (chosenCatId === id) resetSpin();
+    save();
+    renderAll();
+  }
+
+  function resetSpin() {
+    phase = 1;
+    chosenCatId = null;
+    currentAngle = 0;
+    document.getElementById('spinBtn').textContent = '🎲 第一转：选菜系';
+    document.getElementById('spinBtn').disabled = false;
+    document.getElementById('resetBtn').style.display = 'none';
+    renderAll();
+  }
+
+  // ===== 旋转逻辑 =====
+  function spin() {
+    if (spinning) return;
+
+    let items;
+    if (phase === 1) {
+      items = data.categories;
+      if (items.length < 2) return;
+    } else {
+      const cat = data.categories.find(c => c.id === chosenCatId);
+      items = cat ? cat.foods : [];
+      if (items.length < 2) return;
+    }
+
+    spinning = true;
+    document.getElementById('spinBtn').disabled = true;
+
+    const totalRotation = Math.PI * 2 * (5 + Math.random() * 5);
+    const duration = 3500 + Math.random() * 1000;
+    const startTime = performance.now();
+    const startAngle = currentAngle;
+    function easeOut(t) { return 1 - Math.pow(1 - t, 4); }
+
+    function frame(now) {
+      const progress = Math.min((now - startTime) / duration, 1);
+      currentAngle = startAngle + totalRotation * easeOut(progress);
+      renderWheel();
+      if (progress < 1) {
+        requestAnimationFrame(frame);
+      } else {
+        spinning = false;
+        onSpinEnd(items);
+      }
+    }
+    requestAnimationFrame(frame);
+  }
+
+  function getWinnerIdx(count) {
+    const slice = (Math.PI * 2) / count;
+    const normalized = (((-currentAngle - Math.PI / 2) % (Math.PI * 2)) + Math.PI * 2) % (Math.PI * 2);
+    return Math.floor(normalized / slice) % count;
+  }
+
+  function onSpinEnd(items) {
+    const idx = getWinnerIdx(items.length);
+
+    if (phase === 1) {
+      // 选出了菜系
+      chosenCatId = data.categories[idx].id;
+      const cat = data.categories.find(c => c.id === chosenCatId);
+
+      phase = 2;
+      currentAngle = 0;
+      renderSteps();
+      renderChosenCat();
+
+      const btn = document.getElementById('spinBtn');
+      document.getElementById('resetBtn').style.display = 'block';
+
+      if (!cat || cat.foods.length === 0) {
+        btn.textContent = '⚠️ 该菜系暂无菜品';
+        btn.disabled = true;
+      } else if (cat.foods.length === 1) {
+        // 只有一个菜品直接出结果
+        showResult(cat.name, cat.foods[0]);
+      } else {
+        btn.textContent = `🎯 第二转：从 ${cat.name} 里选`;
+        btn.disabled = false;
+        renderWheel();
+      }
+
+    } else {
+      // 选出了菜品
+      const cat = data.categories.find(c => c.id === chosenCatId);
+      showResult(cat.name, cat.foods[idx]);
+    }
+  }
+
+  function showResult(catName, foodName) {
+    document.getElementById('resultCat').textContent = catName;
+    document.getElementById('resultName').textContent = foodName;
+    document.getElementById('resultPeople').innerHTML =
+      `<strong>${peopleCount}</strong> 个人吃，出发！`;
+    document.getElementById('overlay').classList.add('show');
+  }
+
+  function closeResult(again) {
+    document.getElementById('overlay').classList.remove('show');
+    if (again) resetSpin();
+  }
+
+  // ===== 画转盘 =====
+  function drawWheel(items, startAngle) {
+    const canvas = document.getElementById('wheel');
+    const ctx = canvas.getContext('2d');
+    const cx = canvas.width / 2, cy = canvas.height / 2, r = cx - 2;
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+    if (!items || items.length === 0) {
+      ctx.beginPath(); ctx.arc(cx, cy, r, 0, Math.PI * 2);
+      ctx.fillStyle = '#f5f5f5'; ctx.fill();
+      ctx.fillStyle = '#ccc'; ctx.font = '14px sans-serif';
+      ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+      ctx.fillText('暂无内容', cx, cy);
+      return;
+    }
+
+    const slice = (Math.PI * 2) / items.length;
+    items.forEach((item, i) => {
+      const start = startAngle + i * slice;
+      const end = start + slice;
+      ctx.beginPath();
+      ctx.moveTo(cx, cy);
+      ctx.arc(cx, cy, r, start, end);
+      ctx.closePath();
+      ctx.fillStyle = item.color || COLORS[i % COLORS.length];
+      ctx.fill();
+      ctx.strokeStyle = '#fff'; ctx.lineWidth = 2; ctx.stroke();
+
+      ctx.save();
+      ctx.translate(cx, cy);
+      ctx.rotate(start + slice / 2);
+      ctx.textAlign = 'right';
+      ctx.fillStyle = '#fff';
+      const fs = items.length > 10 ? 10 : items.length > 6 ? 12 : 13;
+      ctx.font = `bold ${fs}px PingFang SC, Microsoft YaHei, sans-serif`;
+      ctx.shadowColor = 'rgba(0,0,0,.3)'; ctx.shadowBlur = 3;
+      ctx.fillText(item.label, r - 10, 4);
+      ctx.restore();
+    });
+
+    ctx.beginPath(); ctx.arc(cx, cy, 20, 0, Math.PI * 2);
+    ctx.fillStyle = '#fff'; ctx.fill();
+    ctx.strokeStyle = '#ddd'; ctx.lineWidth = 2; ctx.stroke();
+  }
+
+  // ===== 新增分类弹窗 =====
+  function openModal() {
+    document.getElementById('catInput').value = '';
+    document.getElementById('modalOverlay').classList.add('show');
+    setTimeout(() => document.getElementById('catInput').focus(), 100);
+  }
+  function closeModal() { document.getElementById('modalOverlay').classList.remove('show'); }
+  function confirmAddCat() {
+    const val = document.getElementById('catInput').value.trim();
+    if (!val) return;
+    const id = 'cat_' + Date.now();
+    data.categories.push({ id, name: val, foods: [] });
+    data.activeCat = id;
+    save();
+    closeModal();
+    renderAll();
+  }
+
+  document.getElementById('catInput').addEventListener('keydown', e => {
+    if (e.key === 'Enter') confirmAddCat();
+    if (e.key === 'Escape') closeModal();
+  });
+  document.getElementById('foodInput').addEventListener('keydown', e => {
+    if (e.key === 'Enter') addFood();
+  });
+
+  load();
+  loadPeople();
+  renderAll();
+</script>
+</body>
+</html>

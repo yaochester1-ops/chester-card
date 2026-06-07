@@ -244,6 +244,83 @@
     .contact-label { color: #BDBDBD; font-size: 0.85rem; }
     .contact-value { color: #1d1d1f; font-weight: 600; }
 
+    /* ── 贪吃蛇 ── */
+    .snake-section {
+      margin-bottom: 56px;
+    }
+
+    .snake-wrap {
+      background: #1d1d1f;
+      border-radius: 24px;
+      padding: 24px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 16px;
+    }
+
+    .snake-score-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      width: 100%;
+    }
+
+    .snake-score {
+      font-family: 'Courier New', monospace;
+      font-size: 0.85rem;
+      font-weight: 700;
+      color: #FFB3D1;
+      letter-spacing: 0.1em;
+    }
+
+    .snake-best {
+      font-family: 'Courier New', monospace;
+      font-size: 0.85rem;
+      color: #636366;
+      letter-spacing: 0.1em;
+    }
+
+    #snake-canvas {
+      border-radius: 12px;
+      display: block;
+      touch-action: none;
+    }
+
+    .snake-controls {
+      display: grid;
+      grid-template-columns: repeat(3, 44px);
+      grid-template-rows: repeat(2, 44px);
+      gap: 6px;
+    }
+
+    .snake-btn {
+      background: #2c2c2e;
+      border: 1.5px solid #3a3a3c;
+      border-radius: 10px;
+      color: #ffffff;
+      font-size: 1rem;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: background 0.15s;
+      user-select: none;
+      -webkit-user-select: none;
+    }
+
+    .snake-btn:active { background: #FFB3D1; color: #1d1d1f; }
+    .snake-btn.up    { grid-column: 2; grid-row: 1; }
+    .snake-btn.left  { grid-column: 1; grid-row: 2; }
+    .snake-btn.down  { grid-column: 2; grid-row: 2; }
+    .snake-btn.right { grid-column: 3; grid-row: 2; }
+
+    .snake-hint {
+      font-size: 0.72rem;
+      color: #636366;
+      text-align: center;
+    }
+
     /* ── MCQ 闪卡 ── */
     .mcq-section { margin-bottom: 56px; }
 
@@ -402,6 +479,7 @@
       今年带着车队征战 CSDC 2026，认真备战中。
       喜欢拍照，对什么都好奇，懂得有点杂。
       一个在新加坡读书、在赛道上漂移、用镜头记录世界的 17 岁。
+      最爱的水果：🍉 西瓜 · 🍓 草莓 · 🥭 芒果
     </div>
 
     <div class="section-label">关于我</div>
@@ -510,6 +588,25 @@
       </div>
     </div>
 
+    <!-- 贪吃蛇 -->
+    <div class="snake-section">
+      <div class="section-label">来玩贪吃蛇</div>
+      <div class="snake-wrap">
+        <div class="snake-score-row">
+          <span class="snake-score">SCORE: <span id="score">0</span></span>
+          <span class="snake-best">BEST: <span id="best">0</span></span>
+        </div>
+        <canvas id="snake-canvas" width="300" height="300"></canvas>
+        <div class="snake-controls">
+          <button class="snake-btn up"    onclick="snakeDir(0,-1)">▲</button>
+          <button class="snake-btn left"  onclick="snakeDir(-1,0)">◀</button>
+          <button class="snake-btn down"  onclick="snakeDir(0,1)">▼</button>
+          <button class="snake-btn right" onclick="snakeDir(1,0)">▶</button>
+        </div>
+        <div class="snake-hint">键盘方向键 或 点按钮控制 · 点画面开始</div>
+      </div>
+    </div>
+
     <!-- MCQ 测验 -->
     <div class="mcq-section">
       <div class="section-label">你真的了解我吗？</div>
@@ -543,6 +640,121 @@
   </div>
 
   <script>
+    // ── 贪吃蛇 ──
+    const canvas = document.getElementById('snake-canvas');
+    const ctx    = canvas.getContext('2d');
+    const CELL   = 15;
+    const COLS   = canvas.width  / CELL;
+    const ROWS   = canvas.height / CELL;
+
+    let snake, dir, nextDir, food, score, best = 0, loop, running = false;
+
+    function initSnake() {
+      snake   = [{x:10, y:10},{x:9,y:10},{x:8,y:10}];
+      dir     = {x:1, y:0};
+      nextDir = {x:1, y:0};
+      score   = 0;
+      document.getElementById('score').textContent = 0;
+      placeFood();
+      if (loop) clearInterval(loop);
+      loop = setInterval(tick, 110);
+      running = true;
+    }
+
+    function placeFood() {
+      do {
+        food = {x: Math.floor(Math.random()*COLS), y: Math.floor(Math.random()*ROWS)};
+      } while (snake.some(s => s.x===food.x && s.y===food.y));
+    }
+
+    function tick() {
+      dir = nextDir;
+      const head = {x: snake[0].x + dir.x, y: snake[0].y + dir.y};
+      if (head.x<0||head.x>=COLS||head.y<0||head.y>=ROWS||snake.some(s=>s.x===head.x&&s.y===head.y)) {
+        clearInterval(loop); running = false; drawGameOver(); return;
+      }
+      snake.unshift(head);
+      if (head.x===food.x && head.y===food.y) {
+        score++;
+        if (score > best) { best = score; document.getElementById('best').textContent = best; }
+        document.getElementById('score').textContent = score;
+        placeFood();
+      } else { snake.pop(); }
+      draw();
+    }
+
+    function draw() {
+      ctx.fillStyle = '#1d1d1f';
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+      // 网格
+      ctx.strokeStyle = 'rgba(255,255,255,0.03)';
+      ctx.lineWidth = 0.5;
+      for (let x=0; x<COLS; x++) { ctx.beginPath(); ctx.moveTo(x*CELL,0); ctx.lineTo(x*CELL,canvas.height); ctx.stroke(); }
+      for (let y=0; y<ROWS; y++) { ctx.beginPath(); ctx.moveTo(0,y*CELL); ctx.lineTo(canvas.width,y*CELL); ctx.stroke(); }
+
+      // 蛇
+      snake.forEach((s, i) => {
+        ctx.fillStyle = i === 0 ? '#FFB3D1' : `rgba(255,179,209,${1 - i/snake.length * 0.6})`;
+        ctx.beginPath();
+        ctx.roundRect(s.x*CELL+1, s.y*CELL+1, CELL-2, CELL-2, 4);
+        ctx.fill();
+      });
+
+      // 食物（西瓜🍉 → 用红绿圆）
+      ctx.fillStyle = '#4CAF50';
+      ctx.beginPath();
+      ctx.arc(food.x*CELL+CELL/2, food.y*CELL+CELL/2, CELL/2-1, 0, Math.PI*2);
+      ctx.fill();
+      ctx.fillStyle = '#E53935';
+      ctx.beginPath();
+      ctx.arc(food.x*CELL+CELL/2, food.y*CELL+CELL/2, CELL/2-3, 0, Math.PI*2);
+      ctx.fill();
+    }
+
+    function drawGameOver() {
+      ctx.fillStyle = 'rgba(0,0,0,0.7)';
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+      ctx.fillStyle = '#FFB3D1';
+      ctx.font = 'bold 22px -apple-system, sans-serif';
+      ctx.textAlign = 'center';
+      ctx.fillText('GAME OVER', canvas.width/2, canvas.height/2 - 16);
+      ctx.fillStyle = '#ffffff';
+      ctx.font = '14px -apple-system, sans-serif';
+      ctx.fillText('分数 ' + score, canvas.width/2, canvas.height/2 + 12);
+      ctx.fillStyle = '#636366';
+      ctx.font = '12px -apple-system, sans-serif';
+      ctx.fillText('点击重新开始', canvas.width/2, canvas.height/2 + 36);
+    }
+
+    function drawStart() {
+      ctx.fillStyle = '#1d1d1f';
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+      ctx.fillStyle = '#FFB3D1';
+      ctx.font = 'bold 20px -apple-system, sans-serif';
+      ctx.textAlign = 'center';
+      ctx.fillText('贪吃蛇 🐍', canvas.width/2, canvas.height/2 - 12);
+      ctx.fillStyle = '#636366';
+      ctx.font = '13px -apple-system, sans-serif';
+      ctx.fillText('点击开始', canvas.width/2, canvas.height/2 + 16);
+    }
+
+    function snakeDir(dx, dy) {
+      if (!running) { initSnake(); return; }
+      if (dx !== 0 && dir.x !== 0) return;
+      if (dy !== 0 && dir.y !== 0) return;
+      nextDir = {x:dx, y:dy};
+    }
+
+    canvas.addEventListener('click', () => { if (!running) initSnake(); });
+    document.addEventListener('keydown', e => {
+      const map = { ArrowUp:[0,-1], ArrowDown:[0,1], ArrowLeft:[-1,0], ArrowRight:[1,0] };
+      if (map[e.key]) { e.preventDefault(); const [dx,dy]=map[e.key]; snakeDir(dx,dy); }
+    });
+
+    drawStart();
+
+    // ── MCQ ──
     const qs = [
       {
         q: "Chester 的中文名叫什么？",
